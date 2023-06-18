@@ -301,7 +301,7 @@ export default function Home() {
           </TableContainer>
         </Grid>
         <Grid item xs={12}>
-          <Typography>Not Playing (gadapet pasangan)</Typography>
+          <Typography>Not Playing</Typography>
           <List component="nav">
             {shuffleResult.notPlaying.map((name, index) => (
               <ListItem key={index}>
