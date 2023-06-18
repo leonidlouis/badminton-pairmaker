@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSessionContext } from "./context/SessionContext";
 import {
   Select,
@@ -29,11 +29,15 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import ShuffleIcon from "@mui/icons-material/Shuffle";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import { POSSIBLE_GAME_MODE_OPTIONS } from "./constant";
+import Link from "next/link";
 
 export default function Home() {
   const { session, setSession } = useSessionContext();
 
-  // FUNCTION TO MANIPULATE SESSION
+  const [shuffleResult, setShuffleResult] = useState({
+    notPlaying: [],
+    courts: [],
+  });
 
   const handleGameModeChange = (event) => {
     setSession((prevSession) => ({
@@ -41,13 +45,6 @@ export default function Home() {
       gameMode: event.target.value,
     }));
   };
-
-  // const handleNameChange = (event) => {
-  //   setSession((prevSession) => ({
-  //     ...prevSession,
-  //     name: event.target.value,
-  //   }));
-  // };
 
   const handleCourtCountChange = (event) => {
     setSession((prevSession) => ({
@@ -83,11 +80,6 @@ export default function Home() {
       players: values,
     }));
   };
-
-  const [shuffleResult, setShuffleResult] = useState({
-    notPlaying: [],
-    courts: [],
-  });
 
   console.log(shuffleResult);
 
@@ -128,11 +120,30 @@ export default function Home() {
     setSession({
       players: [],
       matches: [],
-      courtCount: 0,
+      courtCount: 1,
       gameMode: "",
       name: "",
     });
+    setShuffleResult({
+      notPlaying: [],
+      courts: [],
+    });
   };
+
+  const isShuffleDisabled = useMemo(() => {
+    if (!session.gameMode) {
+      return true;
+    }
+
+    const minPlayer = session.gameMode == "DOUBLE" ? 4 : 2;
+    console.log(session.gameMode, minPlayer, session.players.length);
+
+    if (minPlayer > session.players.length) {
+      return true;
+    }
+
+    return false;
+  }, [session]);
 
   return (
     <main>
@@ -257,58 +268,91 @@ export default function Home() {
             startIcon={<ShuffleIcon />}
             variant="outlined"
             onClick={shuffle}
+            disabled={isShuffleDisabled}
           >
             <Typography>Shuffle</Typography>
           </Button>
+          {isShuffleDisabled ? " add more players to shuffle" : ""}
         </Grid>
 
-        <Grid item xs={12}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <Typography>Court Number</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>Team 1</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography>Team 2</Typography>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {shuffleResult.courts.map((court, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{court.courtNumber}</TableCell>
+        {shuffleResult.courts.length > 0 ? (
+          <Grid item xs={12}>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
                     <TableCell>
-                      {court.teamOne[0]}
-                      {session.gameMode === "DOUBLE"
-                        ? ` & ${court.teamOne[1]}`
-                        : ""}
+                      <Typography>Court Number</Typography>
                     </TableCell>
                     <TableCell>
-                      {court.teamTwo[0]}
-                      {session.gameMode === "DOUBLE"
-                        ? ` & ${court.teamTwo[1]}`
-                        : ""}
+                      <Typography>Team 1</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>Team 2</Typography>
                     </TableCell>
                   </TableRow>
+                </TableHead>
+                <TableBody>
+                  {shuffleResult.courts.map((court, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{court.courtNumber}</TableCell>
+                      <TableCell>
+                        {court.teamOne[0]}
+                        {session.gameMode === "DOUBLE"
+                          ? ` & ${court.teamOne[1]}`
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {court.teamTwo[0]}
+                        {session.gameMode === "DOUBLE"
+                          ? ` & ${court.teamTwo[1]}`
+                          : ""}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Grid>
+        ) : null}
+
+        {shuffleResult.notPlaying.length > 0 ? (
+          <Grid item xs={12}>
+            <Typography>Not Playing</Typography>
+            <Box>
+              <List component="nav">
+                {shuffleResult.notPlaying.map((name, index) => (
+                  <ListItem key={index}>
+                    <ListItemText primary={`${index + 1}. ${name}`} />
+                  </ListItem>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </List>
+            </Box>
+          </Grid>
+        ) : null}
+
+        <Grid item xs={12}>
+          <Divider sx={{ border: "1px solid black" }} />
         </Grid>
         <Grid item xs={12}>
-          <Typography>Not Playing</Typography>
-          <List component="nav">
-            {shuffleResult.notPlaying.map((name, index) => (
-              <ListItem key={index}>
-                <ListItemText primary={`${index + 1}. ${name}`} />
-              </ListItem>
-            ))}
-          </List>
+          <Typography>
+            source code is here:&nbsp;
+            <Link
+              href="https://github.com/leonidlouis/badminton-pairmaker"
+              target="_blank"
+            >
+              https://github.com/leonidlouis/badminton-pairmaker
+            </Link>
+          </Typography>
+          <Typography>
+            connect with me here:&nbsp;
+            <Link
+              href="https://www.linkedin.com/in/leonidlouis/"
+              target="_blank"
+            >
+              https://www.linkedin.com/in/leonidlouis/
+            </Link>
+          </Typography>
         </Grid>
       </Grid>
     </main>

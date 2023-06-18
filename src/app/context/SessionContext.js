@@ -7,7 +7,7 @@ export const SessionProvider = ({ children }) => {
   const [session, setSession] = useState({
     players: [],
     matches: [],
-    courtCount: 0,
+    courtCount: 1,
     gameMode: "",
     name: "",
   });
