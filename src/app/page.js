@@ -283,10 +283,16 @@ export default function Home() {
                   <TableRow key={index}>
                     <TableCell>{court.courtNumber}</TableCell>
                     <TableCell>
-                      {court.teamOne[0]} & {court.teamOne[1]}
+                      {court.teamOne[0]}
+                      {session.gameMode === "DOUBLE"
+                        ? ` & ${court.teamOne[1]}`
+                        : ""}
                     </TableCell>
                     <TableCell>
-                      {court.teamTwo[0]} & {court.teamTwo[1]}
+                      {court.teamTwo[0]}
+                      {session.gameMode === "DOUBLE"
+                        ? ` & ${court.teamTwo[1]}`
+                        : ""}
                     </TableCell>
                   </TableRow>
                 ))}
