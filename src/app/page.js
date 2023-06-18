@@ -187,7 +187,7 @@ export default function Home() {
           <TextField
             fullWidth
             variant="outlined"
-            label="Court count"
+            label="Court count (ada berapa lapangan)"
             value={session.courtCount}
             onChange={handleCourtCountChange}
             type="number"
@@ -301,7 +301,7 @@ export default function Home() {
           </TableContainer>
         </Grid>
         <Grid item xs={12}>
-          <Typography>NOT PLAYING</Typography>
+          <Typography>Not Playing (gadapet pasangan)</Typography>
           <List component="nav">
             {shuffleResult.notPlaying.map((name, index) => (
               <ListItem key={index}>
