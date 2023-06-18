@@ -47,10 +47,13 @@ export default function Home() {
   };
 
   const handleCourtCountChange = (event) => {
-    setSession((prevSession) => ({
-      ...prevSession,
-      courtCount: event.target.value,
-    }));
+    const regex = /^[0-9\b]+$/;
+    if (event.target.value === "" || regex.test(event.target.value)) {
+      setSession((prevSession) => ({
+        ...prevSession,
+        courtCount: event.target.value,
+      }));
+    }
   };
 
   const handlePlayerInputChange = (index, event) => {
