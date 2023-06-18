@@ -328,7 +328,12 @@ export default function Home() {
           <Divider sx={{ border: "1px solid black" }} />
         </Grid>
         <Grid item xs={12}>
-          <Typography>
+          <Typography variant="subtitle2">
+            p.s. data is <b>saved between sessions</b>, so you can reload /
+            access the page at anytime & what you've filled will still be there
+            :)
+          </Typography>
+          <Typography variant="subtitle2">
             source code is here:&nbsp;
             <Link
               href="https://github.com/leonidlouis/badminton-pairmaker"
@@ -337,7 +342,7 @@ export default function Home() {
               https://github.com/leonidlouis/badminton-pairmaker
             </Link>
           </Typography>
-          <Typography>
+          <Typography variant="subtitle2">
             connect with me here:&nbsp;
             <Link
               href="https://www.linkedin.com/in/leonidlouis/"
