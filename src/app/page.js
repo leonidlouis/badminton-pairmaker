@@ -33,8 +33,6 @@ import { POSSIBLE_GAME_MODE_OPTIONS } from "./constant";
 export default function Home() {
   const { session, setSession } = useSessionContext();
 
-  console.log(session, "currentSession");
-
   // FUNCTION TO MANIPULATE SESSION
 
   const handleGameModeChange = (event) => {
@@ -44,12 +42,12 @@ export default function Home() {
     }));
   };
 
-  const handleNameChange = (event) => {
-    setSession((prevSession) => ({
-      ...prevSession,
-      name: event.target.value,
-    }));
-  };
+  // const handleNameChange = (event) => {
+  //   setSession((prevSession) => ({
+  //     ...prevSession,
+  //     name: event.target.value,
+  //   }));
+  // };
 
   const handleCourtCountChange = (event) => {
     setSession((prevSession) => ({
@@ -94,7 +92,7 @@ export default function Home() {
   console.log(shuffleResult);
 
   const shuffle = () => {
-    const { players, gameMode, courtCount } = session;
+    const { players, gameMode } = session;
     const listOfPlayers = [...players].sort(() => Math.random() - 0.5);
 
     const courts = [];
@@ -104,26 +102,21 @@ export default function Home() {
     let remainingPlayers = players.length;
 
     for (let i = 0; i < listOfPlayers.length; i += playersPerTeam * 2) {
-      if (courts.length < courtCount) {
-        if (remainingPlayers < playersPerTeam * 2) {
-          notPlaying.push(...listOfPlayers.slice(i));
-          break;
-        }
-        const teamOne = listOfPlayers.slice(i, i + playersPerTeam);
-        const teamTwo = listOfPlayers.slice(
-          i + playersPerTeam,
-          i + playersPerTeam * 2
-        );
-        courts.push({
-          courtNumber: courts.length + 1,
-          teamOne: teamOne,
-          teamTwo: teamTwo,
-        });
-        remainingPlayers -= playersPerTeam * 2;
-      } else {
+      if (remainingPlayers < playersPerTeam * 2) {
         notPlaying.push(...listOfPlayers.slice(i));
         break;
       }
+      const teamOne = listOfPlayers.slice(i, i + playersPerTeam);
+      const teamTwo = listOfPlayers.slice(
+        i + playersPerTeam,
+        i + playersPerTeam * 2
+      );
+      courts.push({
+        courtNumber: courts.length + 1,
+        teamOne: teamOne,
+        teamTwo: teamTwo,
+      });
+      remainingPlayers -= playersPerTeam * 2;
     }
 
     setShuffleResult({ courts, notPlaying });
@@ -159,7 +152,7 @@ export default function Home() {
             <Typography>RESET(DELETE) ALL DATA</Typography>
           </Button>
         </Grid>
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <TextField
             fullWidth
             variant="outlined"
@@ -167,7 +160,7 @@ export default function Home() {
             value={session.name}
             onChange={handleNameChange}
           />
-        </Grid>
+        </Grid> */}
         <Grid item xs={12}>
           <FormControl variant="outlined" fullWidth>
             <InputLabel id="demo-simple-select-outlined-label">
