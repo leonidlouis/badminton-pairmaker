@@ -165,15 +165,6 @@ export default function Home() {
             <Typography>RESET(DELETE) ALL DATA</Typography>
           </Button>
         </Grid>
-        {/* <Grid item xs={12}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            label="Name"
-            value={session.name}
-            onChange={handleNameChange}
-          />
-        </Grid> */}
         <Grid item xs={12}>
           <FormControl variant="outlined" fullWidth>
             <InputLabel id="demo-simple-select-outlined-label">
@@ -272,7 +263,9 @@ export default function Home() {
           >
             <Typography>Shuffle</Typography>
           </Button>
-          {isShuffleDisabled ? " add more players to shuffle" : ""}
+          {isShuffleDisabled
+            ? " add more players & check game mode to shuffle"
+            : ""}
         </Grid>
 
         {shuffleResult.courts.length > 0 ? (
