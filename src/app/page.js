@@ -92,7 +92,7 @@ export default function Home() {
   console.log(shuffleResult);
 
   const shuffle = () => {
-    const { players, gameMode } = session;
+    const { players, gameMode, courtCount } = session;
     const listOfPlayers = [...players].sort(() => Math.random() - 0.5);
 
     const courts = [];
@@ -112,7 +112,9 @@ export default function Home() {
         i + playersPerTeam * 2
       );
       courts.push({
-        courtNumber: courts.length + 1,
+        courtNumber: `${courts.length + 1}${
+          courts.length + 1 > courtCount ? " (play later)" : ""
+        }`,
         teamOne: teamOne,
         teamTwo: teamTwo,
       });
@@ -277,8 +279,8 @@ export default function Home() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {shuffleResult.courts.map((court) => (
-                  <TableRow key={court.courtNumber}>
+                {shuffleResult.courts.map((court, index) => (
+                  <TableRow key={index}>
                     <TableCell>{court.courtNumber}</TableCell>
                     <TableCell>
                       {court.teamOne[0]} & {court.teamOne[1]}
