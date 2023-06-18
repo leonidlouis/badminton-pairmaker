@@ -33,10 +33,6 @@ import { POSSIBLE_GAME_MODE_OPTIONS } from "./constant";
 export default function Home() {
   const { session, setSession } = useSessionContext();
 
-  useEffect(() => {
-    setSession({ ...session, name: "NAMANYA SIAPA" });
-  }, []);
-
   console.log(session, "currentSession");
 
   // FUNCTION TO MANIPULATE SESSION
