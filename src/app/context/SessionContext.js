@@ -12,21 +12,33 @@ export const SessionProvider = ({ children }) => {
     name: "",
   });
 
+  const [shuffleResult, setShuffleResult] = useState({
+    notPlaying: [],
+    courts: [],
+  });
+
   // Load state from localStorage
   useEffect(() => {
     const savedSession = localStorage.getItem("session");
+    const savedShuffleResult = localStorage.getItem("shuffleResult");
     if (savedSession) {
       setSession(JSON.parse(savedSession));
     }
+    if (savedShuffleResult) {
+      setShuffleResult(JSON.parse(savedShuffleResult));
+    }
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save session state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("session", JSON.stringify(session));
-  }, [session]);
+    localStorage.setItem("shuffleResult", JSON.stringify(shuffleResult));
+  }, [session, shuffleResult]);
 
   return (
-    <SessionContext.Provider value={{ session, setSession }}>
+    <SessionContext.Provider
+      value={{ session, setSession, shuffleResult, setShuffleResult }}
+    >
       {children}
     </SessionContext.Provider>
   );

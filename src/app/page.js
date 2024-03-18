@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, Fragment } from "react";
 import { useSessionContext } from "./context/SessionContext";
 import {
   Select,
@@ -22,6 +22,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  Switch,
 } from "@mui/material";
 
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -32,12 +33,94 @@ import { POSSIBLE_GAME_MODE_OPTIONS } from "./constant";
 import Link from "next/link";
 
 export default function Home() {
-  const { session, setSession } = useSessionContext();
+  const { session, setSession, shuffleResult, setShuffleResult } =
+    useSessionContext();
 
-  const [shuffleResult, setShuffleResult] = useState({
-    notPlaying: [],
-    courts: [],
-  });
+  // FISHER-YATES
+  const fisherYatesShuffle = (array) => {
+    let arrayCopy = [...array];
+    for (let i = arrayCopy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arrayCopy[i], arrayCopy[j]] = [arrayCopy[j], arrayCopy[i]];
+    }
+    return arrayCopy;
+  };
+
+  // for simulation purposes
+  // useEffect(() => {
+  //   const simulateMatchups = () => {
+  //     // Initialize with 10 new players and matchups tracking
+  //     const simulatedPlayers = Array.from({ length: 10 }, (_, index) => ({
+  //       name: `Player ${index + 1}`,
+  //       played: 0,
+  //       matchups: {},
+  //     }));
+
+  //     for (let i = 0; i < 10000; i++) {
+  //       const shuffledPlayers = fisherYatesShuffle(simulatedPlayers); // ~3.5% deviation
+  //       // const shuffledPlayers = simulatedPlayers.sort(
+  //       //   () => Math.random() - 0.5
+  //       // );
+
+  //       const playing = shuffledPlayers.slice(0, 8); // Assume top 8 are playing this round
+
+  //       // Update played count and matchups
+  //       playing.forEach((player, idx) => {
+  //         player.played += 1;
+  //         for (let j = 0; j < playing.length; j++) {
+  //           if (idx !== j) {
+  //             // Don't match a player with themselves
+  //             player.matchups[playing[j].name] =
+  //               (player.matchups[playing[j].name] || 0) + 1;
+  //           }
+  //         }
+  //       });
+  //     }
+
+  //     // Calculate the highest, lowest, deviation, and percentage deviation of matchups for each player
+  //     simulatedPlayers.forEach((player) => {
+  //       const matchupsValues = Object.values(player.matchups);
+  //       const maxMatchups = Math.max(0, ...matchupsValues); // Avoid -Infinity for players with no matchups
+  //       const minMatchups = Math.min(
+  //         ...(matchupsValues.length ? matchupsValues : [0])
+  //       ); // Avoid Infinity and ensure at least 0
+  //       const deviation = maxMatchups - minMatchups;
+  //       const deviationPercentage =
+  //         (deviation / ((maxMatchups + minMatchups) / 2)) * 100;
+  //       console.log(`${player.name} matchups: `, player.matchups);
+  //       console.log(
+  //         `${
+  //           player.name
+  //         } Max matchups: ${maxMatchups}, Min matchups: ${minMatchups}, Deviation: ${deviation}, Deviation Percentage: ${deviationPercentage.toFixed(
+  //           2
+  //         )}%`
+  //       );
+  //     });
+
+  //     let globalMax = 0;
+  //     let globalMin = Infinity;
+  //     simulatedPlayers.forEach((player) => {
+  //       Object.values(player.matchups).forEach((count) => {
+  //         if (count > globalMax) globalMax = count;
+  //         if (count < globalMin) globalMin = count;
+  //       });
+  //     });
+  //     const globalDeviation = globalMax - globalMin;
+  //     const globalDeviationPercentage =
+  //       (globalDeviation / ((globalMax + globalMin) / 2)) * 100;
+  //     console.log(
+  //       `Global Max matchups: ${globalMax}, Global Min matchups: ${globalMin}, Global Deviation: ${globalDeviation}, Global Deviation Percentage: ${globalDeviationPercentage.toFixed(
+  //         2
+  //       )}%`
+  //     );
+  //   };
+
+  //   const timer = setTimeout(() => {
+  //     simulateMatchups();
+  //   }, 5000);
+
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   const handleGameModeChange = (event) => {
     setSession((prevSession) => ({
@@ -57,11 +140,11 @@ export default function Home() {
   };
 
   const handlePlayerInputChange = (index, event) => {
-    const values = [...session.players];
-    values[index] = event.target.value;
+    const newPlayers = [...session.players];
+    newPlayers[index] = { ...newPlayers[index], name: event.target.value };
     setSession((prevSession) => ({
       ...prevSession,
-      players: values,
+      players: newPlayers,
     }));
   };
 
@@ -70,8 +153,21 @@ export default function Home() {
       ...prevSession,
       players: [
         ...prevSession.players,
-        (prevSession.players.length + 1).toString(),
+        {
+          name: (prevSession.players.length + 1).toString(),
+          played: 0,
+          active: true,
+        },
       ],
+    }));
+  };
+
+  const togglePlayerActive = (index) => {
+    const newPlayers = [...session.players];
+    newPlayers[index].active = !newPlayers[index].active;
+    setSession((prevSession) => ({
+      ...prevSession,
+      players: newPlayers,
     }));
   };
 
@@ -84,25 +180,28 @@ export default function Home() {
     }));
   };
 
-  console.log(shuffleResult);
-
   const shuffle = () => {
     const { players, gameMode, courtCount } = session;
-    const listOfPlayers = [...players].sort(() => Math.random() - 0.5);
+
+    const activePlayers = players.filter((player) => player.active);
+    const inactivePlayers = players.filter((player) => !player.active);
+
+    // Use Fisher-Yates shuffle on active players
+    const listOfActivePlayers = fisherYatesShuffle(activePlayers);
 
     const courts = [];
     const notPlaying = [];
 
     const playersPerTeam = gameMode === "DOUBLE" ? 2 : 1;
-    let remainingPlayers = players.length;
+    let remainingPlayers = listOfActivePlayers.length;
 
-    for (let i = 0; i < listOfPlayers.length; i += playersPerTeam * 2) {
+    for (let i = 0; i < listOfActivePlayers.length; i += playersPerTeam * 2) {
       if (remainingPlayers < playersPerTeam * 2) {
-        notPlaying.push(...listOfPlayers.slice(i));
+        notPlaying.push(...listOfActivePlayers.slice(i));
         break;
       }
-      const teamOne = listOfPlayers.slice(i, i + playersPerTeam);
-      const teamTwo = listOfPlayers.slice(
+      const teamOne = listOfActivePlayers.slice(i, i + playersPerTeam);
+      const teamTwo = listOfActivePlayers.slice(
         i + playersPerTeam,
         i + playersPerTeam * 2
       );
@@ -115,6 +214,9 @@ export default function Home() {
       });
       remainingPlayers -= playersPerTeam * 2;
     }
+
+    // Append all inactive players to notPlaying at the end
+    notPlaying.push(...inactivePlayers);
 
     setShuffleResult({ courts, notPlaying });
   };
@@ -131,6 +233,24 @@ export default function Home() {
       notPlaying: [],
       courts: [],
     });
+  };
+
+  const confirmMatchup = () => {
+    const newPlayers = session.players.map((player) => {
+      if (
+        !shuffleResult.notPlaying.some(
+          (notPlayingPlayer) => notPlayingPlayer.name === player.name
+        )
+      ) {
+        return { ...player, played: player.played + 1 };
+      }
+      return player;
+    });
+
+    setSession((prevSession) => ({
+      ...prevSession,
+      players: newPlayers,
+    }));
   };
 
   const isShuffleDisabled = useMemo(() => {
@@ -231,9 +351,12 @@ export default function Home() {
               <TextField
                 variant="outlined"
                 label={`Player ${index + 1}`}
-                value={player}
+                value={player.name}
                 onChange={(event) => handlePlayerInputChange(index, event)}
               />
+              <Typography variant="body1" marginLeft={2}>
+                Play Count: {player.played}
+              </Typography>
 
               <Button
                 startIcon={<RemoveCircleOutlineIcon />}
@@ -242,6 +365,12 @@ export default function Home() {
               >
                 <Typography>Delete</Typography>
               </Button>
+              <Switch
+                checked={player.active}
+                onChange={() => togglePlayerActive(index)}
+                name="active"
+                inputProps={{ "aria-label": "secondary checkbox" }}
+              />
             </Box>
           ))}
         </Grid>
@@ -270,6 +399,13 @@ export default function Home() {
             ? " add more players & check game mode to shuffle"
             : ""}
         </Grid>
+        {shuffleResult.courts.length > 0 && (
+          <Grid item xs={12}>
+            <Button variant="outlined" color="primary" onClick={confirmMatchup}>
+              <Typography>Confirm Matchup</Typography>
+            </Button>
+          </Grid>
+        )}
 
         {shuffleResult.courts.length > 0 ? (
           <Grid item xs={12}>
@@ -293,16 +429,20 @@ export default function Home() {
                     <TableRow key={index}>
                       <TableCell>{court.courtNumber}</TableCell>
                       <TableCell>
-                        {court.teamOne[0]}
-                        {session.gameMode === "DOUBLE"
-                          ? ` & ${court.teamOne[1]}`
-                          : ""}
+                        {court.teamOne.map((player, idx) => (
+                          <Fragment key={idx}>
+                            {idx > 0 ? " & " : ""}
+                            {player.name}
+                          </Fragment>
+                        ))}
                       </TableCell>
                       <TableCell>
-                        {court.teamTwo[0]}
-                        {session.gameMode === "DOUBLE"
-                          ? ` & ${court.teamTwo[1]}`
-                          : ""}
+                        {court.teamTwo.map((player, idx) => (
+                          <Fragment key={idx}>
+                            {idx > 0 ? " & " : ""}
+                            {player.name}
+                          </Fragment>
+                        ))}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -317,9 +457,9 @@ export default function Home() {
             <Typography>Not Playing</Typography>
             <Box>
               <List component="nav">
-                {shuffleResult.notPlaying.map((name, index) => (
+                {shuffleResult.notPlaying.map((player, index) => (
                   <ListItem key={index}>
-                    <ListItemText primary={`${index + 1}. ${name}`} />
+                    <ListItemText primary={`${index + 1}. ${player.name}`} />
                   </ListItem>
                 ))}
               </List>
