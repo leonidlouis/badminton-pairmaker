@@ -399,13 +399,6 @@ export default function Home() {
             ? " add more players & check game mode to shuffle"
             : ""}
         </Grid>
-        {shuffleResult.courts.length > 0 && (
-          <Grid item xs={12}>
-            <Button variant="outlined" color="primary" onClick={confirmMatchup}>
-              <Typography>Confirm Matchup</Typography>
-            </Button>
-          </Grid>
-        )}
 
         {shuffleResult.courts.length > 0 ? (
           <Grid item xs={12}>
@@ -451,6 +444,16 @@ export default function Home() {
             </TableContainer>
           </Grid>
         ) : null}
+        {shuffleResult.courts.length > 0 && (
+          <Grid item xs={12}>
+            <Button variant="outlined" color="primary" onClick={confirmMatchup}>
+              <Typography>Confirm Above Matchup</Typography>
+            </Button>{" "}
+            <Typography variant="subtitle2">
+              *Will increment Play Count
+            </Typography>
+          </Grid>
+        )}
 
         {shuffleResult.notPlaying.length > 0 ? (
           <Grid item xs={12}>
