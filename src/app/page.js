@@ -27,6 +27,8 @@ import {
 
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import PersonRemoveOutlinedIcon from "@mui/icons-material/PersonRemoveOutlined";
+import ControlPointOutlinedIcon from "@mui/icons-material/ControlPointOutlined";
 import ShuffleIcon from "@mui/icons-material/Shuffle";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import { POSSIBLE_GAME_MODE_OPTIONS } from "./constant";
@@ -180,6 +182,38 @@ export default function Home() {
     }));
   };
 
+  const decrementPlayCount = (index) => {
+    const newPlayers = [...session.players];
+    let playedCount = Number(newPlayers[index].played);
+    if (isNaN(playedCount)) {
+      playedCount = 0;
+    } else if (playedCount > 0) {
+      playedCount -= 1;
+    }
+    newPlayers[index].played = playedCount;
+
+    setSession((prevSession) => ({
+      ...prevSession,
+      players: newPlayers,
+    }));
+  };
+
+  const incrementPlayCount = (index) => {
+    const newPlayers = [...session.players];
+    let playedCount = Number(newPlayers[index].played);
+    if (isNaN(playedCount)) {
+      playedCount = 1;
+    } else {
+      playedCount += 1;
+    }
+    newPlayers[index].played = playedCount;
+
+    setSession((prevSession) => ({
+      ...prevSession,
+      players: newPlayers,
+    }));
+  };
+
   const shuffle = () => {
     const { players, gameMode, courtCount } = session;
 
@@ -237,14 +271,19 @@ export default function Home() {
 
   const confirmMatchup = () => {
     const newPlayers = session.players.map((player) => {
+      let playedCount = Number(player.played);
+      if (isNaN(playedCount)) {
+        playedCount = 0;
+      }
+
       if (
         !shuffleResult.notPlaying.some(
           (notPlayingPlayer) => notPlayingPlayer.name === player.name
         )
       ) {
-        return { ...player, played: player.played + 1 };
+        playedCount += 1;
       }
-      return player;
+      return { ...player, played: playedCount };
     });
 
     setSession((prevSession) => ({
@@ -340,38 +379,68 @@ export default function Home() {
           </Button>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid container item xs={12}>
           {session.players.map((player, index) => (
-            <Box
-              key={index}
-              display="flex"
-              alignItems="center"
-              marginBottom={2}
-            >
+            <Grid key={index} item xs={12} sx={{ mb: 2, mt: 2 }}>
               <TextField
                 variant="outlined"
                 label={`Player ${index + 1}`}
                 value={player.name}
                 onChange={(event) => handlePlayerInputChange(index, event)}
               />
-              <Typography variant="body1" marginLeft={2}>
-                Play Count: {player.played}
-              </Typography>
 
-              <Button
-                startIcon={<RemoveCircleOutlineIcon />}
-                onClick={() => handleRemovePlayer(index)}
-                color="error"
-              >
-                <Typography>Delete</Typography>
-              </Button>
-              <Switch
-                checked={player.active}
-                onChange={() => togglePlayerActive(index)}
-                name="active"
-                inputProps={{ "aria-label": "secondary checkbox" }}
-              />
-            </Box>
+              <Grid item xs={12}>
+                <Grid item xs={12}>
+                  <Typography variant="body1">
+                    Play Count: {player.played}
+                  </Typography>
+                </Grid>
+                <Button
+                  startIcon={<RemoveCircleOutlineIcon />}
+                  onClick={() => decrementPlayCount(index)}
+                  color="error"
+                  size="small"
+                  variant="outlined"
+                >
+                  <Typography variant="subtitle2">
+                    Decrement Play Count
+                  </Typography>
+                </Button>
+
+                <Button
+                  startIcon={<ControlPointOutlinedIcon />}
+                  onClick={() => incrementPlayCount(index)}
+                  color="info"
+                  size="small"
+                  variant="outlined"
+                >
+                  <Typography variant="subtitle2">
+                    Increment Play Count
+                  </Typography>
+                </Button>
+
+                <Button
+                  startIcon={<PersonRemoveOutlinedIcon />}
+                  onClick={() => handleRemovePlayer(index)}
+                  color="error"
+                  size="small"
+                  variant="outlined"
+                >
+                  <Typography variant="subtitle2">Delete</Typography>
+                </Button>
+
+                <Switch
+                  checked={player.active}
+                  onChange={() => togglePlayerActive(index)}
+                  name="active"
+                  inputProps={{ "aria-label": "secondary checkbox" }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider />
+              </Grid>
+            </Grid>
           ))}
         </Grid>
 
