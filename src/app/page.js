@@ -27,6 +27,7 @@ import {
   IconRestore,
   IconSettings,
   IconTrash,
+  IconUpload,
   IconUsers,
 } from "@tabler/icons-react";
 
@@ -36,10 +37,15 @@ import Title from "@/components/Title";
 import BigSwitch from "@/components/BigSwitch";
 import IconButton from "@/components/IconButton";
 import BorderedTableCell from "@/components/BorderedTableCell";
+import Toast from "@/components/Toast";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const { session, setSession, shuffleResult, setShuffleResult } =
     useSessionContext();
+
+  const [tabValue, setTabValue] = useState(0);
+  const [inputImportPlayers, setInputImportPlayers] = useState("");
 
   // FISHER-YATES
   const fisherYatesShuffle = (array) => {
@@ -307,14 +313,32 @@ export default function Home() {
     }));
   };
 
+  const importPlayers = () => {
+    resetSession();
+
+    const importedPlayers = inputImportPlayers
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .map((line) => {
+        const [_, name] = line.split(". ");
+        return { name, played: 0, active: true };
+      });
+
+    setSession((prevSession) => ({
+      ...prevSession,
+      players: importedPlayers,
+    }));
+    setInputImportPlayers("");
+    setTabValue(1);
+
+    toast.success("Players imported successfully");
+  };
+
   const isShuffleDisabled = useMemo(() => {
     const minPlayer = session.isDouble ? 4 : 2;
 
     return minPlayer > session.players.length;
   }, [session]);
-
-  //
-  const [tabValue, setTabValue] = useState(0);
 
   const isTabActive = useCallback(
     (tab) => {
@@ -325,6 +349,7 @@ export default function Home() {
 
   return (
     <Stack spacing={2}>
+      <Toast />
       <Box display={"flex"} justifyContent={"center"}>
         <Title text={"Badminton Pairmaker App"} />
       </Box>
@@ -666,6 +691,26 @@ export default function Home() {
 
       {isTabActive(2) && (
         <Stack spacing={2}>
+          <Stack spacing={1}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Import Player List
+            </Typography>
+            <TextField
+              multiline
+              value={inputImportPlayers}
+              onChange={(e) => setInputImportPlayers(e.target.value)}
+            />
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<IconUpload size={16} />}
+              sx={{ textTransform: "none" }}
+              onClick={importPlayers}
+            >
+              Import Players
+            </Button>
+          </Stack>
+          <Divider />
           <Button
             variant="outlined"
             onClick={resetSession}
@@ -737,6 +782,19 @@ export default function Home() {
                       <IconBrandLinkedin color="black" />
                       <Typography variant="subtitle2">
                         Vilbert Gunawan
+                      </Typography>
+                    </Box>
+                  </Link>
+                </Grid>
+                <Grid item xs={6}>
+                  <Link
+                    href="http://www.linkedin.com/in/reydhid-febrian-2a2151179"
+                    target="_blank"
+                  >
+                    <Box display={"flex"} gap={1}>
+                      <IconBrandLinkedin color="black" />
+                      <Typography variant="subtitle2">
+                        Reydhid Febrian
                       </Typography>
                     </Box>
                   </Link>
