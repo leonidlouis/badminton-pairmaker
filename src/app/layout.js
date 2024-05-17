@@ -1,3 +1,4 @@
+import { Container } from "@mui/material";
 import { SessionProvider } from "./context/SessionContext";
 import "./globals.css";
 import { Inter } from "next/font/google";
@@ -13,7 +14,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <Container fixed maxWidth={"sm"}>
+            {children}
+          </Container>
+        </SessionProvider>
       </body>
     </html>
   );
