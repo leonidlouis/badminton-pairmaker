@@ -1,4 +1,5 @@
 "use client";
+
 import React, { createContext, useState, useEffect, useContext } from "react";
 
 const SessionContext = createContext({});
@@ -10,6 +11,7 @@ export const SessionProvider = ({ children }) => {
     courtCount: 1,
     gameMode: "",
     name: "",
+    isDouble: false,
   });
 
   const [shuffleResult, setShuffleResult] = useState({

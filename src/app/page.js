@@ -1,38 +1,41 @@
 "use client";
-import { useMemo, Fragment } from "react";
-import { useSessionContext } from "./context/SessionContext";
+
+import { useMemo, useState, useCallback } from "react";
+import Link from "next/link";
 import {
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Grid,
   TextField,
   Typography,
   Divider,
   Box,
   Button,
-  TableContainer,
   Table,
-  TableHead,
   TableRow,
-  TableCell,
-  Paper,
   TableBody,
-  List,
-  ListItem,
-  ListItemText,
-  Switch,
+  Stack,
+  Tabs,
+  Tab,
 } from "@mui/material";
+import {
+  IconArrowsShuffle,
+  IconBrandGithub,
+  IconBrandLinkedin,
+  IconChecks,
+  IconMinus,
+  IconPlus,
+  IconRefresh,
+  IconRestore,
+  IconSettings,
+  IconTrash,
+  IconUsers,
+} from "@tabler/icons-react";
 
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import PersonRemoveOutlinedIcon from "@mui/icons-material/PersonRemoveOutlined";
-import ControlPointOutlinedIcon from "@mui/icons-material/ControlPointOutlined";
-import ShuffleIcon from "@mui/icons-material/Shuffle";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import { POSSIBLE_GAME_MODE_OPTIONS } from "./constant";
-import Link from "next/link";
+import { useSessionContext } from "./context/SessionContext";
+
+import Title from "@/components/Title";
+import BigSwitch from "@/components/BigSwitch";
+import IconButton from "@/components/IconButton";
+import BorderedTableCell from "@/components/BorderedTableCell";
 
 export default function Home() {
   const { session, setSession, shuffleResult, setShuffleResult } =
@@ -124,21 +127,20 @@ export default function Home() {
   //   return () => clearTimeout(timer);
   // }, []);
 
-  const handleGameModeChange = (event) => {
+  const handleGameModeChange = (newValue) => {
     setSession((prevSession) => ({
       ...prevSession,
-      gameMode: event.target.value,
+      isDouble: newValue,
     }));
   };
 
-  const handleCourtCountChange = (event) => {
-    const regex = /^[0-9\b]+$/;
-    if (event.target.value === "" || regex.test(event.target.value)) {
-      setSession((prevSession) => ({
-        ...prevSession,
-        courtCount: event.target.value,
-      }));
-    }
+  const handleCourtCountChange = (newValue) => {
+    if (newValue <= 0) return;
+
+    setSession((prevSession) => ({
+      ...prevSession,
+      courtCount: newValue,
+    }));
   };
 
   const handlePlayerInputChange = (index, event) => {
@@ -214,8 +216,18 @@ export default function Home() {
     }));
   };
 
+  const resetPlayCount = (index) => {
+    const newPlayers = [...session.players];
+    newPlayers[index].played = 0;
+
+    setSession((prevSession) => ({
+      ...prevSession,
+      players: newPlayers,
+    }));
+  };
+
   const shuffle = () => {
-    const { players, gameMode, courtCount } = session;
+    const { players, isDouble, courtCount } = session;
 
     const activePlayers = players.filter((player) => player.active);
     const inactivePlayers = players.filter((player) => !player.active);
@@ -226,7 +238,7 @@ export default function Home() {
     const courts = [];
     const notPlaying = [];
 
-    const playersPerTeam = gameMode === "DOUBLE" ? 2 : 1;
+    const playersPerTeam = isDouble ? 2 : 1;
     let remainingPlayers = listOfActivePlayers.length;
 
     for (let i = 0; i < listOfActivePlayers.length; i += playersPerTeam * 2) {
@@ -253,6 +265,7 @@ export default function Home() {
     notPlaying.push(...inactivePlayers);
 
     setShuffleResult({ courts, notPlaying });
+    setSession({ ...session, shuffled: true });
   };
 
   const resetSession = () => {
@@ -260,8 +273,9 @@ export default function Home() {
       players: [],
       matches: [],
       courtCount: 1,
-      gameMode: "",
       name: "",
+      isDouble: false,
+      shuffled: false,
     });
     setShuffleResult({
       notPlaying: [],
@@ -288,286 +302,450 @@ export default function Home() {
 
     setSession((prevSession) => ({
       ...prevSession,
+      shuffled: false,
       players: newPlayers,
     }));
   };
 
   const isShuffleDisabled = useMemo(() => {
-    if (!session.gameMode) {
-      return true;
-    }
+    const minPlayer = session.isDouble ? 4 : 2;
 
-    const minPlayer = session.gameMode == "DOUBLE" ? 4 : 2;
-    console.log(session.gameMode, minPlayer, session.players.length);
-
-    if (minPlayer > session.players.length) {
-      return true;
-    }
-
-    return false;
+    return minPlayer > session.players.length;
   }, [session]);
 
+  //
+  const [tabValue, setTabValue] = useState(0);
+
+  const isTabActive = useCallback(
+    (tab) => {
+      return tab === tabValue;
+    },
+    [tabValue]
+  );
+
   return (
-    <main>
-      <Grid container spacing={3}>
-        {/* SESSION INFORMATION SECTION */}
-        <Grid item xs={12}>
-          <Typography variant="h5" fontWeight="bold">
-            Badminton Pairing Randomizer
-          </Typography>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button
-            startIcon={<DeleteForeverIcon />}
-            variant="outlined"
-            onClick={resetSession}
-            color="error"
-          >
-            <Typography>RESET(DELETE) ALL DATA</Typography>
-          </Button>
-        </Grid>
-        <Grid item xs={12}>
-          <FormControl variant="outlined" fullWidth>
-            <InputLabel id="demo-simple-select-outlined-label">
-              Game Mode
-            </InputLabel>
-            <Select
-              labelId="demo-simple-select-outlined-label"
-              id="demo-simple-select-outlined"
-              value={session.gameMode}
-              onChange={handleGameModeChange}
-              label="Game Mode"
-            >
-              {POSSIBLE_GAME_MODE_OPTIONS.map((val, key) => (
-                <MenuItem key={key} value={val.value}>
-                  {val.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            label="Court count (ada berapa lapangan)"
-            value={session.courtCount}
-            onChange={handleCourtCountChange}
-            type="number"
+    <Stack spacing={2}>
+      <Box display={"flex"} justifyContent={"center"}>
+        <Title text={"Badminton Pairmaker App"} />
+      </Box>
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs
+          variant="fullWidth"
+          value={tabValue}
+          onChange={(e, newValue) => setTabValue(newValue)}
+        >
+          <Tab
+            label={
+              <Typography
+                variant="body2"
+                fontWeight={isTabActive(0) ? 600 : 400}
+              >
+                Shuffler
+              </Typography>
+            }
+            icon={<IconArrowsShuffle size={16} />}
+            iconPosition={"start"}
+            sx={{ minHeight: 48 }}
           />
-        </Grid>
+          <Tab
+            label={
+              <Typography
+                variant="body2"
+                fontWeight={isTabActive(1) ? 600 : 400}
+              >
+                Players
+              </Typography>
+            }
+            icon={<IconUsers size={16} />}
+            iconPosition={"start"}
+            sx={{ minHeight: 48 }}
+          />
+          <Tab
+            label={
+              <Typography
+                variant="body2"
+                fontWeight={isTabActive(2) ? 600 : 400}
+              >
+                Settings
+              </Typography>
+            }
+            icon={<IconSettings size={16} />}
+            iconPosition="start"
+            sx={{ minHeight: 48 }}
+          />
+        </Tabs>
+      </Box>
 
-        <Grid item xs={12}>
-          <Divider sx={{ border: "1px solid black" }} />
-        </Grid>
-
-        {/* PLAYER LIST SECTION */}
-        <Grid item xs={12}>
-          <Typography variant="h5" fontWeight="bold">
-            Player List
-          </Typography>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button
-            startIcon={<AddCircleOutlineIcon />}
-            variant="outlined"
-            onClick={handleAddPlayer}
+      {isTabActive(0) && (
+        <Stack spacing={2}>
+          <Box
+            display={"flex"}
+            justifyContent={"space-between"}
+            alignItems={"center"}
           >
-            <Typography>Add Player</Typography>
-          </Button>
-        </Grid>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Game Mode:
+            </Typography>
 
-        <Grid container item xs={12}>
-          {session.players.map((player, index) => (
-            <Grid key={index} item xs={12} sx={{ mb: 2, mt: 2 }}>
-              <TextField
-                variant="outlined"
-                label={`Player ${index + 1}`}
-                value={player.name}
-                onChange={(event) => handlePlayerInputChange(index, event)}
+            <Box display={"flex"} gap={2}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {session.isDouble ? "Double" : "Single"}
+              </Typography>
+              <BigSwitch
+                checked={session.isDouble}
+                onClick={() => handleGameModeChange(!session.isDouble)}
               />
-
-              <Grid item xs={12}>
-                <Grid item xs={12}>
-                  <Typography variant="body1">
-                    Play Count: {player.played}
-                  </Typography>
-                </Grid>
-                <Button
-                  startIcon={<RemoveCircleOutlineIcon />}
-                  onClick={() => decrementPlayCount(index)}
-                  color="error"
-                  size="small"
-                  variant="outlined"
-                >
-                  <Typography variant="subtitle2">
-                    Decrement Play Count
-                  </Typography>
-                </Button>
-
-                <Button
-                  startIcon={<ControlPointOutlinedIcon />}
-                  onClick={() => incrementPlayCount(index)}
-                  color="info"
-                  size="small"
-                  variant="outlined"
-                >
-                  <Typography variant="subtitle2">
-                    Increment Play Count
-                  </Typography>
-                </Button>
-
-                <Button
-                  startIcon={<PersonRemoveOutlinedIcon />}
-                  onClick={() => handleRemovePlayer(index)}
-                  color="error"
-                  size="small"
-                  variant="outlined"
-                >
-                  <Typography variant="subtitle2">Delete</Typography>
-                </Button>
-
-                <Switch
-                  checked={player.active}
-                  onChange={() => togglePlayerActive(index)}
-                  name="active"
-                  inputProps={{ "aria-label": "secondary checkbox" }}
-                />
+            </Box>
+          </Box>
+          {/* <Box>
+            <Grid
+              container
+              spacing={2}
+              justifyContent={"space-between"}
+              alignItems={"center"}
+            >
+              <Grid item xs={4}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Court Count:
+                </Typography>
               </Grid>
-
-              <Grid item xs={12}>
-                <Divider />
+              <Grid item>
+                <Box display={"flex"} gap={2} alignItems={"center"}>
+                  <IconButton
+                    variant="primary"
+                    onClick={() =>
+                      handleCourtCountChange(session.courtCount - 1)
+                    }
+                  >
+                    <IconMinus size={16} />
+                  </IconButton>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {session.courtCount}
+                  </Typography>
+                  <IconButton
+                    variant="primary"
+                    onClick={() =>
+                      handleCourtCountChange(session.courtCount + 1)
+                    }
+                  >
+                    <IconPlus size={16} />
+                  </IconButton>
+                </Box>
               </Grid>
             </Grid>
-          ))}
-        </Grid>
+          </Box> */}
 
-        <Grid item xs={12}>
-          <Divider sx={{ border: "1px solid black" }} />
-        </Grid>
+          <Divider />
 
-        {/* PLAYER LIST SECTION */}
-        <Grid item xs={12}>
-          <Typography variant="h5" fontWeight="bold">
-            Match Pairing
-          </Typography>
-        </Grid>
+          <Stack spacing={1}>
+            <Box>
+              <Grid
+                container
+                spacing={1}
+                justifyContent={"space-between"}
+                alignItems={"center"}
+              >
+                <Grid item xs={6}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={shuffle}
+                    disabled={isShuffleDisabled}
+                    startIcon={<IconArrowsShuffle size={16} />}
+                    sx={{ textTransform: "none" }}
+                  >
+                    <Typography variant="body2">Shuffle</Typography>
+                  </Button>
+                </Grid>
+                <Grid item xs={6}>
+                  <Button
+                    fullWidth
+                    disabled={!session.shuffled}
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<IconChecks size={16} />}
+                    onClick={confirmMatchup}
+                    sx={{ textTransform: "none" }}
+                  >
+                    <Typography variant="body2">Confirm Matchup</Typography>
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+            <Box display={"flex"} justifyContent={"center"}>
+              {isShuffleDisabled && (
+                <Typography variant="caption" color="error">
+                  Please add more players & check game mode to shuffle
+                </Typography>
+              )}
+            </Box>
+          </Stack>
 
-        <Grid item xs={12}>
-          <Button
-            startIcon={<ShuffleIcon />}
-            variant="outlined"
-            onClick={shuffle}
-            disabled={isShuffleDisabled}
-          >
-            <Typography>Shuffle</Typography>
-          </Button>
-          {isShuffleDisabled
-            ? " add more players & check game mode to shuffle"
-            : ""}
-        </Grid>
+          {shuffleResult.courts.length > 0 &&
+            shuffleResult.courts.map((court, i) => (
+              <Box key={i}>
+                <Table size="small">
+                  <TableBody>
+                    <TableRow>
+                      <BorderedTableCell colSpan={2}>
+                        <Typography variant="body2" fontWeight={600}>
+                          Court {i + 1}
+                        </Typography>
+                      </BorderedTableCell>
+                    </TableRow>
+                    <TableRow>
+                      {court.teamOne.map((player, i) => (
+                        <BorderedTableCell key={i} sx={{ width: "50%" }}>
+                          {player.name}
+                        </BorderedTableCell>
+                      ))}
+                    </TableRow>
+                    <TableRow>
+                      {court.teamTwo.map((player, i) => (
+                        <BorderedTableCell key={i} sx={{ width: "50%" }}>
+                          {player.name}
+                        </BorderedTableCell>
+                      ))}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </Box>
+            ))}
 
-        {shuffleResult.courts.length > 0 ? (
-          <Grid item xs={12}>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      <Typography>Court Number</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography>Team 1</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography>Team 2</Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
+          {shuffleResult.notPlaying.length > 0 && (
+            <Box>
+              <Table size="small">
                 <TableBody>
-                  {shuffleResult.courts.map((court, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{court.courtNumber}</TableCell>
-                      <TableCell>
-                        {court.teamOne.map((player, idx) => (
-                          <Fragment key={idx}>
-                            {idx > 0 ? " & " : ""}
-                            {player.name}
-                          </Fragment>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        {court.teamTwo.map((player, idx) => (
-                          <Fragment key={idx}>
-                            {idx > 0 ? " & " : ""}
-                            {player.name}
-                          </Fragment>
-                        ))}
-                      </TableCell>
+                  <TableRow>
+                    <BorderedTableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        Not Playing
+                      </Typography>
+                    </BorderedTableCell>
+                  </TableRow>
+                  {shuffleResult.notPlaying.map((player, i) => (
+                    <TableRow>
+                      <BorderedTableCell key={i} sx={{ width: "50%" }}>
+                        {player.name}
+                      </BorderedTableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </TableContainer>
-          </Grid>
-        ) : null}
-        {shuffleResult.courts.length > 0 && (
-          <Grid item xs={12}>
-            <Button variant="outlined" color="primary" onClick={confirmMatchup}>
-              <Typography>Confirm Above Matchup</Typography>
-            </Button>{" "}
-            <Typography variant="subtitle2">
-              *Will increment Play Count
-            </Typography>
-          </Grid>
-        )}
-
-        {shuffleResult.notPlaying.length > 0 ? (
-          <Grid item xs={12}>
-            <Typography>Not Playing</Typography>
-            <Box>
-              <List component="nav">
-                {shuffleResult.notPlaying.map((player, index) => (
-                  <ListItem key={index}>
-                    <ListItemText primary={`${index + 1}. ${player.name}`} />
-                  </ListItem>
-                ))}
-              </List>
             </Box>
-          </Grid>
-        ) : null}
+          )}
+        </Stack>
+      )}
 
-        <Grid item xs={12}>
-          <Divider sx={{ border: "1px solid black" }} />
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="subtitle2">
-            p.s. data is <b>saved between sessions</b>, so you can reload /
-            access the page at anytime & what you've filled will still be there
-            :)
-          </Typography>
-          <Typography variant="subtitle2">
-            source code is here:&nbsp;
-            <Link
-              href="https://github.com/leonidlouis/badminton-pairmaker"
-              target="_blank"
+      {isTabActive(1) && (
+        <Stack spacing={2}>
+          <Box>
+            <Grid
+              container
+              spacing={1}
+              justifyContent={"space-between"}
+              alignItems={"center"}
             >
-              https://github.com/leonidlouis/badminton-pairmaker
-            </Link>
-          </Typography>
-          <Typography variant="subtitle2">
-            connect with me here:&nbsp;
-            <Link
-              href="https://www.linkedin.com/in/leonidlouis/"
-              target="_blank"
-            >
-              https://www.linkedin.com/in/leonidlouis/
-            </Link>
-          </Typography>
-        </Grid>
-      </Grid>
-    </main>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  startIcon={<IconPlus size={16} />}
+                  variant="outlined"
+                  onClick={handleAddPlayer}
+                  sx={{ textTransform: "none" }}
+                >
+                  <Typography variant="body2">Add Player</Typography>
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  startIcon={<IconRestore size={16} />}
+                  variant="outlined"
+                  color={"secondary"}
+                  onClick={handleAddPlayer}
+                  sx={{ textTransform: "none" }}
+                >
+                  <Typography variant="body2">Reset Play Count</Typography>
+                </Button>
+              </Grid>
+            </Grid>
+          </Box>
+          <Divider />
+          {session.players.map((player, index) => (
+            <Grid key={index} item xs={12} sx={{ mb: 2, mt: 2 }}>
+              <Stack spacing={1}>
+                <TextField
+                  size="small"
+                  variant="outlined"
+                  label={`Player ${index + 1}`}
+                  value={player.name}
+                  onChange={(event) => handlePlayerInputChange(index, event)}
+                />
+
+                <Grid
+                  container
+                  justifyContent={"space-between"}
+                  alignItems={"center"}
+                >
+                  <Grid item xs={4}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      Play Count:
+                    </Typography>
+                  </Grid>
+                  <Grid item>
+                    <Box display={"flex"} gap={2} alignItems={"center"}>
+                      <IconButton
+                        variant="primary"
+                        onClick={() => decrementPlayCount(index)}
+                      >
+                        <IconMinus size={16} />
+                      </IconButton>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {player.played}
+                      </Typography>
+                      <IconButton
+                        variant="primary"
+                        onClick={() => incrementPlayCount(index)}
+                      >
+                        <IconPlus size={16} />
+                      </IconButton>
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                <Grid
+                  container
+                  justifyContent={"space-between"}
+                  alignItems={"center"}
+                >
+                  <Grid item xs={4}>
+                    <Box display={"flex"} gap={1} alignItems={"center"}>
+                      <BigSwitch
+                        checked={player.active}
+                        onChange={() => togglePlayerActive(index)}
+                        name="active"
+                      />
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {player.active ? "Active" : "Inactive"}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item>
+                    <Box display={"flex"} gap={2}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<IconRefresh size={16} />}
+                        sx={{ textTransform: "none" }}
+                        onClick={() => resetPlayCount(index)}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<IconTrash size={16} />}
+                        sx={{ textTransform: "none" }}
+                        onClick={() => handleRemovePlayer(index)}
+                      >
+                        Delete
+                      </Button>
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                <Divider />
+              </Stack>
+            </Grid>
+          ))}
+        </Stack>
+      )}
+
+      {isTabActive(2) && (
+        <Stack spacing={2}>
+          <Button
+            variant="outlined"
+            onClick={resetSession}
+            color="error"
+            startIcon={<IconTrash size={16} />}
+            sx={{ textTransform: "none" }}
+          >
+            <Typography variant="body2">Reset All Settings</Typography>
+          </Button>
+
+          <Stack>
+            <Typography variant="subtitle2">
+              Data is saved between sessions.
+            </Typography>
+            <Typography variant="subtitle2">
+              Leaving or reloading the page will not affect the data.
+            </Typography>
+            <Typography variant="subtitle2">
+              Reset All Settings will entirely remove all players data.
+            </Typography>
+          </Stack>
+
+          <Divider />
+
+          <Stack>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Source Code
+            </Typography>
+            <Box>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Link
+                    href="https://github.com/leonidlouis/badminton-pairmaker"
+                    target="_blank"
+                  >
+                    <Box display={"flex"} gap={1}>
+                      <IconBrandGithub color="black" />
+                      <Typography variant="subtitle2">GitHub</Typography>
+                    </Box>
+                  </Link>
+                </Grid>
+              </Grid>
+            </Box>
+          </Stack>
+
+          <Stack>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Contributors
+            </Typography>
+            <Box>
+              <Grid container spacing={2} fontWeight={600}>
+                <Grid item xs={6}>
+                  <Link
+                    href="https://www.linkedin.com/in/leonidlouis"
+                    target="_blank"
+                  >
+                    <Box display={"flex"} gap={1}>
+                      <IconBrandLinkedin color="black" />
+                      <Typography variant="subtitle2">Louis Leonid</Typography>
+                    </Box>
+                  </Link>
+                </Grid>
+                <Grid item xs={6}>
+                  <Link
+                    href="https://www.linkedin.com/in/vilbert"
+                    target="_blank"
+                  >
+                    <Box display={"flex"} gap={1}>
+                      <IconBrandLinkedin color="black" />
+                      <Typography variant="subtitle2">
+                        Vilbert Gunawan
+                      </Typography>
+                    </Box>
+                  </Link>
+                </Grid>
+              </Grid>
+            </Box>
+          </Stack>
+        </Stack>
+      )}
+    </Stack>
   );
 }
